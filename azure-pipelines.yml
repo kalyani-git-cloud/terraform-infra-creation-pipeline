@@ -1,0 +1,55 @@
+trigger: none
+
+parameters:
+- name: environment
+  displayName: Select Environment
+  type: string
+  default: dev
+
+  values:
+  - dev
+  - test
+  - stage
+  - prod
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  serviceConnection: 'terraform-service-connection'
+
+steps:
+
+- task: TerraformInstaller@1
+  inputs:
+    terraformVersion: 'latest'
+
+- task: TerraformTaskV4@4
+  displayName: Terraform Init
+  inputs:
+    provider: azurerm
+    command: init
+    backendServiceArm: $(serviceConnection)
+    backendAzureRmResourceGroupName: terraform-backend-rg
+    backendAzureRmStorageAccountName: tfstatekalyani001
+    backendAzureRmContainerName: tfstate
+    backendAzureRmKey: '${{ parameters.environment }}.tfstate'
+
+- task: TerraformTaskV4@4
+  displayName: Terraform Plan
+  inputs:
+    provider: azurerm
+    command: plan
+    commandOptions: >
+      -var-file=environments/${{ parameters.environment }}.tfvars
+    environmentServiceNameAzureRM: $(serviceConnection)
+
+- task: TerraformTaskV4@4
+  displayName: Terraform Apply
+  inputs:
+    provider: azurerm
+    command: apply
+    commandOptions: >
+      -auto-approve
+      -var-file=environments/${{ parameters.environment }}.tfvars
+    environmentServiceNameAzureRM: $(serviceConnection)
