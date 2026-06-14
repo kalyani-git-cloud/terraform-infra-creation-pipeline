@@ -20,49 +20,36 @@ variables:
 
 steps:
 
-- task: AzureCliV2@1
-  displayName: Install Terraform
+- task: TerraformInstaller@1
   inputs:
-    azureSubscription: $(serviceConnection)
-    scriptType: bash
-    scriptLocation: inlineScript
-    inlineScript: |
-      # Install Terraform
-      wget -O /tmp/terraform.zip https://releases.hashicorp.com/terraform/1.9.0/terraform_1.9.0_linux_amd64.zip
-      unzip /tmp/terraform.zip -d /usr/local/bin
-      terraform --version
+    terraformVersion: 'latest'
 
-- task: AzureCliV2@1
+- task: TerraformTaskV4@4
   displayName: Terraform Init
   inputs:
-    azureSubscription: $(serviceConnection)
-    scriptType: bash
-    scriptLocation: inlineScript
-    inlineScript: |
-      terraform init \
-        -backend-config="resource_group_name=terraform-backend-rg" \
-        -backend-config="storage_account_name=tfstatekalyani001" \
-        -backend-config="container_name=tfstate" \
-        -backend-config="key=${{ parameters.environment }}.tfstate"
+    provider: azurerm
+    command: init
+    backendServiceArm: $(serviceConnection)
+    backendAzureRmResourceGroupName: terraform-backend-rg
+    backendAzureRmStorageAccountName: tfstatekalyani001
+    backendAzureRmContainerName: tfstate
+    backendAzureRmKey: '${{ parameters.environment }}.tfstate'
 
-- task: AzureCliV2@1
+- task: TerraformTaskV4@4
   displayName: Terraform Plan
   inputs:
-    azureSubscription: $(serviceConnection)
-    scriptType: bash
-    scriptLocation: inlineScript
-    inlineScript: |
-      terraform plan \
-        -var-file=environments/${{ parameters.environment }}.tfvars \
-        -out=tfplan
+    provider: azurerm
+    command: plan
+    commandOptions: >
+      -var-file=environments/${{ parameters.environment }}.tfvars
+    environmentServiceNameAzureRM: $(serviceConnection)
 
-- task: AzureCliV2@1
+- task: TerraformTaskV4@4
   displayName: Terraform Apply
   inputs:
-    azureSubscription: $(serviceConnection)
-    scriptType: bash
-    scriptLocation: inlineScript
-    inlineScript: |
-      terraform apply \
-        -auto-approve \
-        tfplan
+    provider: azurerm
+    command: apply
+    commandOptions: >
+      -auto-approve
+      -var-file=environments/${{ parameters.environment }}.tfvars
+    environmentServiceNameAzureRM: $(serviceConnection)
