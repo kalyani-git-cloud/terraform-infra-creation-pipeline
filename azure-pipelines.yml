@@ -42,7 +42,16 @@ steps:
     command: plan
     commandOptions: >
       -var-file=environments/${{ parameters.environment }}.tfvars
+      -out=tfplan
     environmentServiceNameAzureRM: $(serviceConnection)
+
+- task: ManualValidation@0
+  displayName: Reviewer approval
+  inputs:
+    notifyUsers: ''
+    instructions: 'Review the Terraform plan output in the pipeline logs. Approve to continue to apply.'
+    onTimeout: 'reject'
+    timeout: '4320'
 
 - task: TerraformTaskV4@4
   displayName: Terraform Apply
@@ -51,5 +60,5 @@ steps:
     command: apply
     commandOptions: >
       -auto-approve
-      -var-file=environments/${{ parameters.environment }}.tfvars
+      tfplan
     environmentServiceNameAzureRM: $(serviceConnection)
