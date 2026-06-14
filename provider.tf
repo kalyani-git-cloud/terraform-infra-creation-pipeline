@@ -7,6 +7,10 @@ terraform {
       version = "~>4.0"
     }
   }
+
+  backend "azurerm" {
+    # Backend config is provided via -backend-config flags in the pipeline
+  }
 }
 
 provider "azurerm" {
